@@ -44,7 +44,8 @@ Projeyi kendi bilgisayarınızda klonlayıp çalıştırmak için aşağıdaki a
 git clone [https://github.com/nisanurd75-coder/spatial-data-dashboard.git](https://github.com/nisanurd75-coder/spatial-data-dashboard.git)
 cd spatial-data-dashboard
 
-2. Gerekli Kütüphaneleri Yükleyin
+### 2. Gerekli Kütüphaneleri Yükleyin
+```bash
 pip install -r requirements.txt
 
 3. Uygulamayı Başlatın
