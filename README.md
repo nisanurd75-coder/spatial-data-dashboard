@@ -51,6 +51,7 @@ pip install -r requirements.txt
 streamlit run app.py
 
 📸 Uygulama Ekran Görüntüleri & Kullanım
+
 1.Dosya Yükleme: Sol yan menüden GeoJSON/KML dosyanızı sürükleyip bırakın.
 
 2.Çizim & Ölçüm: Sol üstteki çizim araçlarını kullanarak haritaya yeni alanlar veya rotalar ekleyin.
