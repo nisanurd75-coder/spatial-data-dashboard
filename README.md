@@ -44,8 +44,7 @@ Projeyi kendi bilgisayarınızda klonlayıp çalıştırmak için aşağıdaki a
 git clone [https://github.com/nisanurd75-coder/spatial-data-dashboard.git](https://github.com/nisanurd75-coder/spatial-data-dashboard.git)
 cd spatial-data-dashboard
 
-### 2. Gerekli Kütüphaneleri Yükleyin
-```bash
+2. Gerekli Kütüphaneleri Yükleyin
 pip install -r requirements.txt
 
 3. Uygulamayı Başlatın
@@ -53,8 +52,11 @@ streamlit run app.py
 
 📸 Uygulama Ekran Görüntüleri & Kullanım
 1,Dosya Yükleme: Sol yan menüden GeoJSON/KML dosyanızı sürükleyip bırakın.
+<img width="1917" height="972" alt="Ekran görüntüsü 2026-09-09 000403" src="https://github.com/user-attachments/assets/5bdbfc45-3d91-45f0-96b3-f8183b20e9db" />
+
 
 2.Çizim & Ölçüm: Sol üstteki çizim araçlarını kullanarak haritaya yeni alanlar veya rotalar ekleyin.
+<img width="1917" height="972" alt="Ekran görüntüsü 2026-09-09 000503" src="https://github.com/user-attachments/assets/b6244c60-d859-456d-a4ba-52c8ccc440c0" />
 
 3.Tekli Silme: Çöp kutusu simgesine tıklayıp silmek istediğiniz objeyi seçin ve Save butonuna basın.
 
