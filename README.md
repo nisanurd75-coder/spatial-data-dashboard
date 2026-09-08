@@ -1,3 +1,4 @@
+<img width="1917" height="972" alt="Ekran görüntüsü 2026-09-09 000503" src="https://github.com/user-attachments/assets/1815451d-6d67-408c-a0d1-9ed7f6664627" />
 # 🗺️ Spatial Data Analysis & Web GIS Dashboard
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
@@ -53,10 +54,12 @@ streamlit run app.py
 📸 Uygulama Ekran Görüntüleri & Kullanım
 1,Dosya Yükleme: Sol yan menüden GeoJSON/KML dosyanızı sürükleyip bırakın.
 <img width="1917" height="972" alt="Ekran görüntüsü 2026-09-09 000403" src="https://github.com/user-attachments/assets/5bdbfc45-3d91-45f0-96b3-f8183b20e9db" />
+<img width="1917" height="972" alt="Ekran görüntüsü 2026-09-09 000503" src="https://github.com/user-attachments/assets/834bf6a5-e4ea-432d-b28b-bc0ae52a1225" />
 
 
 2.Çizim & Ölçüm: Sol üstteki çizim araçlarını kullanarak haritaya yeni alanlar veya rotalar ekleyin.
 <img width="1917" height="972" alt="Ekran görüntüsü 2026-09-09 000503" src="https://github.com/user-attachments/assets/b6244c60-d859-456d-a4ba-52c8ccc440c0" />
+<img width="1917" height="972" alt="Ekran görüntüsü 2026-09-09 000403" src="https://github.com/user-attachments/assets/634c0c56-0fee-45b8-b837-2b273efde2fe" />
 
 3.Tekli Silme: Çöp kutusu simgesine tıklayıp silmek istediğiniz objeyi seçin ve Save butonuna basın.
 
