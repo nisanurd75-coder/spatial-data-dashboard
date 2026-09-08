@@ -116,6 +116,7 @@ if uploaded_file is not None and len(features_list) > 0:
 folium.LayerControl(position='topright').add_to(m)
 
 st.subheader("📍 İnteraktif Harita")
+st.info("💡 **Kullanım İpucu:** Çizimleri tekli silmek için sol üstteki **Çöp Kutusu** ikonuna tıklayın, silinecek objeyi seçip **Save** butonuna basın.")
 map_data = st_folium(m, use_container_width=True, height=500, key="gis_map")
 
 # 2. Harita Üzerinde Çizilen Yeni Objeleri Yakalama
