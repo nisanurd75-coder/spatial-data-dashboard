@@ -50,7 +50,7 @@ pip install -r requirements.txt
 3. Uygulamayı Başlatın
 streamlit run app.py
 
-📸 Uygulama Ekran Görüntüleri & Kullanım
+## ** 📸 Uygulama Ekran Görüntüleri & Kullanım
 
 1.Dosya Yükleme: Sol yan menüden GeoJSON/KML dosyanızı sürükleyip bırakın.
 
