@@ -1,8 +1,10 @@
 import streamlit as st
 import geopandas as gpd
+import pandas as pd
 import folium
-from folium.plugins import Draw
+from folium.plugins import Draw, MousePosition
 from streamlit_folium import st_folium
+from shapely.geometry import shape
 
 # Sayfa Yapılandırması
 st.set_page_config(
@@ -12,7 +14,7 @@ st.set_page_config(
 )
 
 st.title("🗺️ GeoJSON / KML Veri Analiz ve Görüntüleme Paneli")
-st.write("Mekânsal dosyalarınızı yükleyin, haritada inceleyin, çizim yapın ve analiz sonuçlarını indirin.")
+st.write("Mekânsal dosyalarınızı yükleyin, ekranda yeni alanlar çizin ve karşılaştırmalı analiz yapın.")
 
 # Sol Yan Menü - Dosya Yükleme
 st.sidebar.header("📂 Dosya Yükleme")
@@ -23,40 +25,37 @@ uploaded_file = st.sidebar.file_uploader(
 
 map_center = [39.9334, 32.8597]
 zoom_level = 6
+features_list = []
 
+# 1. Yüklenen Dosyayı İşleme
 if uploaded_file is not None:
     try:
         gdf = gpd.read_file(uploaded_file)
-        
         if gdf.crs is None:
             gdf = gdf.set_crs(epsg=4326)
             
         st.sidebar.success("Dosya başarıyla yüklendi!")
 
-        # Metrik Hesaplamaları
-        gdf_projected = gdf.to_crs(epsg=3857)
-        gdf['Alan (m²)'] = gdf_projected.geometry.area
-        gdf['Alan (Hektar)'] = gdf['Alan (m²)'] / 10000
-        gdf['Uzunluk/Çevre (m)'] = gdf_projected.geometry.length
+        # Yüklenen objeleri listeye ekle
+        for idx, row in gdf.iterrows():
+            features_list.append({
+                "Katman / Kaynak": f"Yüklenen Veri (Obje {idx+1})",
+                "geometry": row.geometry
+            })
 
-        # Harita merkezini verinin ortasına odakla
         centroid = gdf.to_crs(epsg=4326).unary_union.centroid
         map_center = [centroid.y, centroid.x]
         zoom_level = 14
 
     except Exception as e:
         st.error(f"Dosya işlenirken hata oluştu: {e}")
-        gdf = None
-else:
-    gdf = None
-    st.info("💡 Başlamak için sol taraftaki menüden bir GeoJSON veya KML dosyası yükleyin.")
 
 # -------------------------------------------------------------
-# HARİTA, ALTLIKLAR, ÇİZİM ARAÇLARI VE KOORDİNAT BİLGİSİ
+# HARİTA VE ÇİZİM ARAÇLARI
 # -------------------------------------------------------------
 m = folium.Map(location=map_center, zoom_start=zoom_level, tiles="OpenStreetMap", name="OpenStreetMap")
 
-# 1. Farklı Altlık Haritalar
+# Altlık Katmanları
 folium.TileLayer(
     tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attr='Esri',
@@ -69,7 +68,7 @@ folium.TileLayer(
     name='Topoğrafik Harita'
 ).add_to(m)
 
-# 2. Çizim ve Ölçüm Araçları (Draw Control)
+# Çizim Aracı (Draw)
 Draw(
     export=True,
     filename="cizim_verisi.geojson",
@@ -84,11 +83,9 @@ Draw(
     }
 ).add_to(m)
 
-# 3. Anlık Koordinat Göstergesi (Mouse Position)
-folium.LatLngPopup().add_to(m)
+MousePosition(position="bottomright", empty_string="Koordinat dışı").add_to(m)
 
-# Eğer dosya yüklendiyse GeoJSON'ı ekle
-if gdf is not None:
+if uploaded_file is not None and len(features_list) > 0:
     folium.GeoJson(
         gdf,
         name="Yüklenen Veri",
@@ -100,32 +97,53 @@ if gdf is not None:
         }
     ).add_to(m)
 
-# Katman Kontrol Menüsü (Sağ Üst)
 folium.LayerControl(position='topright').add_to(m)
 
-# Haritayı Ekrana Sığacak Şekilde Göster (use_container_width=True sağa taşmayı engeller)
 st.subheader("📍 İnteraktif Harita")
-st_folium(m, use_container_width=True, height=500)
+# Harita etkileşim verilerini yakala (returned_objects)
+map_data = st_folium(m, use_container_width=True, height=500, key="gis_map")
+
+# 2. Harita Üzerinde Çizilen Yeni Objeleri Yakalama ve Ekleme
+if map_data and map_data.get("all_drawings"):
+    drawings = map_data["all_drawings"]
+    for idx, draw in enumerate(drawings):
+        geom = shape(draw["geometry"])
+        features_list.append({
+            "Katman / Kaynak": f"Yeni Çizim {idx+1}",
+            "geometry": geom
+        })
 
 # -------------------------------------------------------------
-# METRİKLER, TABLO VE VERİ DIŞA AKTARMA (CSV DOWNLOAD)
+# DİNAMİK METRİK HESAPLARI VE DİNAMİK TABLO
 # -------------------------------------------------------------
-if gdf is not None:
-    st.subheader("📊 Metrik Hesaplamaları ve Öznitelik Tablosu")
+if len(features_list) > 0:
+    # Tüm verileri (Yüklenen + Çizilenler) GeoDataFrame'e dönüştür
+    full_gdf = gpd.GeoDataFrame(features_list, crs="EPSG:4326")
+    
+    # Metrik Projeksiyonda (EPSG:3857) Alan ve Uzunluk Hesabı
+    full_gdf_proj = full_gdf.to_crs(epsg=3857)
+    full_gdf['Alan (m²)'] = full_gdf_proj.geometry.area
+    full_gdf['Alan (Hektar)'] = full_gdf['Alan (m²)'] / 10000
+    full_gdf['Uzunluk / Çevre (m)'] = full_gdf_proj.geometry.length
+
+    st.subheader("📊 Dinamik Öznitelik ve Karşılaştırma Tablosu")
     
     col1, col2, col3 = st.columns(3)
-    col1.metric("Obje Sayısı", len(gdf))
-    col2.metric("Toplam Alan", f"{gdf['Alan (Hektar)'].sum():.2f} ha")
-    col3.metric("Toplam Uzunluk / Çevre", f"{gdf['Uzunluk/Çevre (m)'].sum():.2f} m")
+    col1.metric("Toplam Obje Sayısı", len(full_gdf))
+    col2.metric("Toplam Alan", f"{full_gdf['Alan (Hektar)'].sum():.2f} ha")
+    col3.metric("Toplam Uzunluk / Çevre", f"{full_gdf['Uzunluk / Çevre (m)'].sum():.2f} m")
 
-    display_df = gdf.drop(columns=['geometry'])
+    # Geometri kolonunu gizle, temiz tabloyu göster
+    display_df = full_gdf.drop(columns=['geometry'])
     st.dataframe(display_df, use_container_width=True)
 
-    # 4. Veri Dışa Aktarma Butonu (CSV İndir)
+    # CSV İndirme Butonu
     csv_data = display_df.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label="📥 Tabloyu ve Hesaplamaları CSV Olarak İndir",
+        label="📥 Tüm Analiz Sonuçlarını CSV Olarak İndir",
         data=csv_data,
-        file_name="mekansal_analiz_sonuclari.csv",
+        file_name="dinamik_mekansal_analiz.csv",
         mime="text/csv"
     )
+else:
+    st.info("💡 Başlamak için bir dosya yükleyin veya harita üzerindeki araçları kullanarak çizim yapın.")
