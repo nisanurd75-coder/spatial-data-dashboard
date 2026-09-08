@@ -60,5 +60,6 @@ streamlit run app.py
 
 4.CSV İndirme: Tablonun altındaki indirme butonunu kullanarak hesaplama sonuçlarını dışa aktarın.
 
-📜 Lisans
+
+## 📜 Lisans
 Bu proje MIT Lisansı altında korunmaktadır. İstediğiniz gibi geliştirebilir ve kullanabilirsiniz.
