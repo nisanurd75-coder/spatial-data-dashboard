@@ -36,7 +36,6 @@ if uploaded_file is not None:
             
         st.sidebar.success("Dosya başarıyla yüklendi!")
 
-        # Yüklenen objeleri listeye ekle
         for idx, row in gdf.iterrows():
             features_list.append({
                 "Katman / Kaynak": f"Yüklenen Veri (Obje {idx+1})",
@@ -51,21 +50,23 @@ if uploaded_file is not None:
         st.error(f"Dosya işlenirken hata oluştu: {e}")
 
 # -------------------------------------------------------------
-# HARİTA VE ÇİZİM ARAÇLARI
+# HARİTA VE ALTLIKLAR
 # -------------------------------------------------------------
 m = folium.Map(location=map_center, zoom_start=zoom_level, tiles="OpenStreetMap", name="OpenStreetMap")
 
-# Altlık Katmanları
+# Altlık Katmanları (max_zoom eklendi, böylece max zoom hatası vermez)
 folium.TileLayer(
     tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attr='Esri',
-    name='Uydu Görüntüsü (Esri)'
+    name='Uydu Görüntüsü (Esri)',
+    max_zoom=19
 ).add_to(m)
 
 folium.TileLayer(
     tiles='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
     attr='OpenTopoMap',
-    name='Topoğrafik Harita'
+    name='Topoğrafik Harita',
+    max_zoom=17
 ).add_to(m)
 
 # Çizim Aracı (Draw)
@@ -80,10 +81,25 @@ Draw(
         "circle": False,
         "marker": True,
         "circlemarker": False
+    },
+    edit_options={
+        "edit": True,      # Çizilen objelerin köşelerinden çekip şeklini değiştirmeyi sağlar
+        "remove": True     # Tekli silme modunu aktif eder
     }
 ).add_to(m)
 
-MousePosition(position="bottomright", empty_string="Koordinat dışı").add_to(m)
+# 🌐 BELİRGİN KOORDİNAT GÖSTERGESİ (WGS84 Enlem / Boylam)
+formatter = "function(num) {return L.Util.formatNum(num, 5) + '°';};"
+MousePosition(
+    position="bottomright",
+    separator=" | Boylam: ",
+    empty_string="Harita dışı",
+    lng_first=False,
+    num_digits=5,
+    prefix="📍 Enlem: ",
+    lat_formatter=formatter,
+    lng_formatter=formatter
+).add_to(m)
 
 if uploaded_file is not None and len(features_list) > 0:
     folium.GeoJson(
@@ -100,10 +116,9 @@ if uploaded_file is not None and len(features_list) > 0:
 folium.LayerControl(position='topright').add_to(m)
 
 st.subheader("📍 İnteraktif Harita")
-# Harita etkileşim verilerini yakala (returned_objects)
 map_data = st_folium(m, use_container_width=True, height=500, key="gis_map")
 
-# 2. Harita Üzerinde Çizilen Yeni Objeleri Yakalama ve Ekleme
+# 2. Harita Üzerinde Çizilen Yeni Objeleri Yakalama
 if map_data and map_data.get("all_drawings"):
     drawings = map_data["all_drawings"]
     for idx, draw in enumerate(drawings):
@@ -114,10 +129,9 @@ if map_data and map_data.get("all_drawings"):
         })
 
 # -------------------------------------------------------------
-# DİNAMİK METRİK HESAPLARI VE DİNAMİK TABLO
+# DİNAMİK METRİK HESAPLARI VE TABLO
 # -------------------------------------------------------------
 if len(features_list) > 0:
-    # Tüm verileri (Yüklenen + Çizilenler) GeoDataFrame'e dönüştür
     full_gdf = gpd.GeoDataFrame(features_list, crs="EPSG:4326")
     
     # Metrik Projeksiyonda (EPSG:3857) Alan ve Uzunluk Hesabı
@@ -126,6 +140,10 @@ if len(features_list) > 0:
     full_gdf['Alan (Hektar)'] = full_gdf['Alan (m²)'] / 10000
     full_gdf['Uzunluk / Çevre (m)'] = full_gdf_proj.geometry.length
 
+    # WGS84 Merkez Koordinatlarını Tabloya Ekleme (Enlem/Boylam)
+    full_gdf['Merkez Enlem (WGS84)'] = full_gdf.geometry.centroid.y
+    full_gdf['Merkez Boylam (WGS84)'] = full_gdf.geometry.centroid.x
+
     st.subheader("📊 Dinamik Öznitelik ve Karşılaştırma Tablosu")
     
     col1, col2, col3 = st.columns(3)
@@ -133,11 +151,9 @@ if len(features_list) > 0:
     col2.metric("Toplam Alan", f"{full_gdf['Alan (Hektar)'].sum():.2f} ha")
     col3.metric("Toplam Uzunluk / Çevre", f"{full_gdf['Uzunluk / Çevre (m)'].sum():.2f} m")
 
-    # Geometri kolonunu gizle, temiz tabloyu göster
     display_df = full_gdf.drop(columns=['geometry'])
     st.dataframe(display_df, use_container_width=True)
 
-    # CSV İndirme Butonu
     csv_data = display_df.to_csv(index=False).encode('utf-8')
     st.download_button(
         label="📥 Tüm Analiz Sonuçlarını CSV Olarak İndir",
